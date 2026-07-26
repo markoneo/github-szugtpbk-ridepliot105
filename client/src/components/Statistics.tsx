@@ -203,6 +203,39 @@ export default function Statistics() {
     };
   }, [projects, selectedYear]);
 
+  // Calculate orders by car type
+  const carTypeStats = useMemo(() => {
+    const yearProjects = projects.filter(p => new Date(p.date).getFullYear() === selectedYear);
+    const carTypeMap = new Map<string, { name: string; count: number }>();
+
+    carTypes.forEach(ct => {
+      carTypeMap.set(ct.id, { name: ct.name, count: 0 });
+    });
+
+    yearProjects.forEach(project => {
+      if (project.carType && carTypeMap.has(project.carType)) {
+        carTypeMap.get(project.carType)!.count += 1;
+      }
+    });
+
+    return Array.from(carTypeMap.values())
+      .filter(ct => ct.count > 0)
+      .sort((a, b) => b.count - a.count);
+  }, [projects, carTypes, selectedYear]);
+
+  const carTypeChartData = useMemo(() => {
+    const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#6366F1', '#EC4899', '#14B8A6', '#F97316'];
+    return {
+      labels: carTypeStats.map(ct => ct.name),
+      datasets: [{
+        data: carTypeStats.map(ct => ct.count),
+        backgroundColor: carTypeStats.map((_, i) => colors[i % colors.length]),
+        borderWidth: 2,
+        borderColor: '#ffffff'
+      }]
+    };
+  }, [carTypeStats]);
+
   // Chart configuration
   const chartOptions = {
     responsive: true,
@@ -835,6 +868,61 @@ export default function Statistics() {
           ) : (
             <div className="px-6 py-8 text-center text-gray-500">
               <p>No completed projects for {selectedYear}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Orders by Car Type */}
+        <div className="mt-8 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-3">
+            <div className="bg-blue-100 p-2 rounded-lg">
+              <Activity className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Orders by Car Type</h3>
+              <p className="text-sm text-gray-500">{selectedYear} - {carTypeStats.reduce((s, ct) => s + ct.count, 0)} total orders</p>
+            </div>
+          </div>
+          {carTypeStats.length > 0 ? (
+            <div className="p-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mb-6">
+                {carTypeStats.map((ct, index) => {
+                  const colors = ['bg-blue-50 text-blue-700 border-blue-200', 'bg-emerald-50 text-emerald-700 border-emerald-200', 'bg-amber-50 text-amber-700 border-amber-200', 'bg-red-50 text-red-700 border-red-200', 'bg-indigo-50 text-indigo-700 border-indigo-200', 'bg-pink-50 text-pink-700 border-pink-200'];
+                  return (
+                    <div key={ct.name} className={`rounded-lg border p-4 text-center ${colors[index % colors.length]}`}>
+                      <p className="text-2xl font-bold">{ct.count}</p>
+                      <p className="text-sm font-medium mt-1 capitalize">{ct.name}</p>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="h-64">
+                <Bar
+                  data={carTypeChartData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: { display: false },
+                      tooltip: {
+                        callbacks: {
+                          label: (ctx: any) => `${ctx.parsed.y} orders`
+                        }
+                      }
+                    },
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                      }
+                    }
+                  }}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="px-6 py-8 text-center text-gray-500">
+              <p>No car type data available for {selectedYear}</p>
             </div>
           )}
         </div>
