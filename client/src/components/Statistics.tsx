@@ -206,15 +206,17 @@ export default function Statistics() {
   // Calculate orders by car type
   const carTypeStats = useMemo(() => {
     const yearProjects = projects.filter(p => new Date(p.date).getFullYear() === selectedYear);
-    const carTypeMap = new Map<string, { name: string; count: number }>();
+    const carTypeMap = new Map<string, { name: string; count: number; revenue: number }>();
 
     carTypes.forEach(ct => {
-      carTypeMap.set(ct.id, { name: ct.name, count: 0 });
+      carTypeMap.set(ct.id, { name: ct.name, count: 0, revenue: 0 });
     });
 
     yearProjects.forEach(project => {
       if (project.carType && carTypeMap.has(project.carType)) {
-        carTypeMap.get(project.carType)!.count += 1;
+        const entry = carTypeMap.get(project.carType)!;
+        entry.count += 1;
+        entry.revenue += project.price || 0;
       }
     });
 
@@ -892,6 +894,7 @@ export default function Statistics() {
                     <div key={ct.name} className={`rounded-lg border p-4 text-center ${colors[index % colors.length]}`}>
                       <p className="text-2xl font-bold">{ct.count}</p>
                       <p className="text-sm font-medium mt-1 capitalize">{ct.name}</p>
+                      <p className="text-xs font-semibold mt-2 opacity-80">{ct.revenue.toLocaleString('en-IE', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
                     </div>
                   );
                 })}
