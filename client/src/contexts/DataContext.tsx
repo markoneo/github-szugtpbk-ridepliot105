@@ -309,7 +309,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const { data, error } = await supabase
         .from('payments')
         .select('*')
-        .eq('user_id', currentUser?.id)
         .order('date', { ascending: false });
 
       if (error) {
