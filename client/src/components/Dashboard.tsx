@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus, MapPin, Users, CreditCard as Edit, Eye, Trash2, Play, Check, Car, Chrome as Home, ChartBar as BarChart2, Settings, LogOut, Search, X, FileText, DollarSign, RefreshCw, CircleAlert as AlertCircle, Calendar, Clock, Activity, TrendingUp, Zap, ArrowRight, Bell, Star, Grid3x3 as Grid3X3, List, Map, Bot, Settings2, TriangleAlert as AlertTriangle, Download, CalendarPlus } from 'lucide-react';
+import { Plus, MapPin, Users, CreditCard as Edit, Eye, Trash2, Play, Check, Car, Chrome as Home, ChartBar as BarChart2, Settings, LogOut, Search, X, FileText, DollarSign, RefreshCw, CircleAlert as AlertCircle, Calendar, Clock, Activity, TrendingUp, Zap, ArrowRight, Bell, Star, Grid3x3 as Grid3X3, List, Map, Bot, Settings2, TriangleAlert as AlertTriangle, Download, CalendarPlus, ChevronDown, ChevronUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
 import Modal from './Modal';
@@ -199,6 +199,7 @@ export default function Dashboard() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedExportDate, setSelectedExportDate] = useState('');
   const [dailyCapacity, setDailyCapacity] = useState<number>(10);
+  const [capacityWarningsCollapsed, setCapacityWarningsCollapsed] = useState(false);
 
   // Memoized company color cache
   const [companyColorCache] = useState<Record<string, string>>({});
@@ -930,88 +931,105 @@ export default function Dashboard() {
         )}
 
         {(capacityWarnings.atCapacity.length > 0 || capacityWarnings.overCapacity.length > 0) && viewMode !== 'analytics' && (
-          <div className="mb-6 space-y-3">
-            {capacityWarnings.atCapacity.map((warning) => {
-              const formattedDate = new Date(warning.date).toLocaleDateString('en-US', {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric'
-              });
+          <div className="mb-6">
+            <button
+              onClick={() => setCapacityWarningsCollapsed(!capacityWarningsCollapsed)}
+              className="flex items-center gap-2 mb-2 text-sm font-medium text-slate-600 hover:text-slate-800 transition-colors"
+            >
+              {capacityWarningsCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+              <span>Capacity Warnings ({capacityWarnings.atCapacity.length + capacityWarnings.overCapacity.length})</span>
+            </button>
 
-              return (
-                <motion.div
-                  key={warning.date}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-300 rounded-lg p-4 shadow-sm"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 bg-blue-100 p-2 rounded-lg">
-                      <AlertCircle className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between flex-wrap gap-2">
-                        <div>
-                          <h3 className="text-sm font-semibold text-blue-900">
-                            At capacity on {formattedDate}
-                          </h3>
-                          <p className="text-sm text-blue-800 mt-1">
-                            You have <strong>{warning.count} projects</strong> scheduled, reaching your daily limit. Avoid adding more to prevent overbooking.
-                          </p>
+            {!capacityWarningsCollapsed && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-3"
+              >
+                {capacityWarnings.atCapacity.map((warning) => {
+                  const formattedDate = new Date(warning.date).toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric'
+                  });
+
+                  return (
+                    <motion.div
+                      key={warning.date}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-300 rounded-lg p-4 shadow-sm"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 bg-blue-100 p-2 rounded-lg">
+                          <AlertCircle className="w-5 h-5 text-blue-600" />
                         </div>
-                        <button
-                          onClick={() => navigate('/settings/general')}
-                          className="flex-shrink-0 text-xs font-medium text-blue-700 hover:text-blue-900 underline"
-                        >
-                          Adjust limit
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-
-            {capacityWarnings.overCapacity.map((warning) => {
-              const formattedDate = new Date(warning.date).toLocaleDateString('en-US', {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric'
-              });
-
-              return (
-                <motion.div
-                  key={warning.date}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 rounded-lg p-4 shadow-sm"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 bg-amber-100 p-2 rounded-lg">
-                      <AlertTriangle className="w-5 h-5 text-amber-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between flex-wrap gap-2">
-                        <div>
-                          <h3 className="text-sm font-semibold text-amber-900">
-                            Over capacity on {formattedDate}
-                          </h3>
-                          <p className="text-sm text-amber-800 mt-1">
-                            You have <strong>{warning.count} projects</strong> scheduled for this date, which exceeds your daily limit of <strong>{dailyCapacity}</strong>
-                          </p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <div>
+                              <h3 className="text-sm font-semibold text-blue-900">
+                                At capacity on {formattedDate}
+                              </h3>
+                              <p className="text-sm text-blue-800 mt-1">
+                                You have <strong>{warning.count} projects</strong> scheduled, reaching your daily limit. Avoid adding more to prevent overbooking.
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => navigate('/settings/general')}
+                              className="flex-shrink-0 text-xs font-medium text-blue-700 hover:text-blue-900 underline"
+                            >
+                              Adjust limit
+                            </button>
+                          </div>
                         </div>
-                        <button
-                          onClick={() => navigate('/settings/general')}
-                          className="flex-shrink-0 text-xs font-medium text-amber-700 hover:text-amber-900 underline"
-                        >
-                          Adjust limit
-                        </button>
                       </div>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
+                    </motion.div>
+                  );
+                })}
+
+                {capacityWarnings.overCapacity.map((warning) => {
+                  const formattedDate = new Date(warning.date).toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric'
+                  });
+
+                  return (
+                    <motion.div
+                      key={warning.date}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 rounded-lg p-4 shadow-sm"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 bg-amber-100 p-2 rounded-lg">
+                          <AlertTriangle className="w-5 h-5 text-amber-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <div>
+                              <h3 className="text-sm font-semibold text-amber-900">
+                                Over capacity on {formattedDate}
+                              </h3>
+                              <p className="text-sm text-amber-800 mt-1">
+                                You have <strong>{warning.count} projects</strong> scheduled for this date, which exceeds your daily limit of <strong>{dailyCapacity}</strong>
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => navigate('/settings/general')}
+                              className="flex-shrink-0 text-xs font-medium text-amber-700 hover:text-amber-900 underline"
+                            >
+                              Adjust limit
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+            )}
           </div>
         )}
 
